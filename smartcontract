@@ -1,0 +1,40 @@
+use solana_program::{
+    account_info::{next_account_info, AccountInfo},
+    entrypoint,
+    entrypoint::ProgramResult,
+    msg,
+    program_error::ProgramError,
+    pubkey::Pubkey,
+};
+
+entrypoint!(process_instruction);
+
+pub fn process_instruction(
+    program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    instruction_data: &[u8],
+) -> ProgramResult {
+    let accounts_iter = &mut accounts.iter();
+    let account = next_account_info(accounts_iter)?;
+
+    if instruction_data.len() < 1 {
+        return Err(ProgramError::InvalidInstructionData);
+    }
+
+    match instruction_data[0] {
+        0 => {
+            // Flip the coin
+            let mut data = account.try_borrow_mut_data()?;
+            data[0] = if rand::random() { 1 } else { 0 };
+            msg!("Flipped the coin: {}", data[0]);
+        }
+        1 => {
+            // Check the result
+            let data = account.try_borrow_data()?;
+            msg!("The result of the last flip was: {}", data[0]);
+        }
+        _ => return Err(ProgramError::InvalidInstructionData),
+    }
+
+    Ok(())
+}
